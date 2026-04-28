@@ -1,7 +1,8 @@
-using System.ComponentModel.DataAnnotation;
+using System.ComponentModel.DataAnnotations;
 
 // Création d'un modèle de données
 namespace TaskFlow.Models {
+  // En fait ça c'est pour laisser un choix contrôlé sur les rôles
   public enum Role
   {
     Admin,
@@ -9,6 +10,7 @@ namespace TaskFlow.Models {
   }
 
   public class User {
+    [Key] // Au cas où, on précise que c'est ça la clef primaire
     public int Id { get; set; }
 
     [Required]
@@ -20,6 +22,6 @@ namespace TaskFlow.Models {
 
     // Important : utiliser une fonction de hashage : RGPD les enfants !!!
     [Required]
-    public string Password = { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
   }
 }
