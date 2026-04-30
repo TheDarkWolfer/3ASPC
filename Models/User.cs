@@ -26,5 +26,8 @@ namespace TaskFlow.Models {
     // Important : utiliser une fonction de hashage : RGPD les enfants !!!
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    // J'avais temporairement oublié les projets, donc pendant un temps personne avait de projets, personne travaillait !
+    public ICollection<Project> Projects { get; set; } = new List<Project>();
   }
 }

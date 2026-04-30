@@ -32,7 +32,7 @@ namespace TaskFlow.Models {
     public Project Project { get; set; } = null!;
 
     // Description de la tâche
-    public StringCollection Description = new StringCollection() ;
+    public ICollection<UserTask> Tasks { get; set; } = new List<UserTask>(); 
 
   }
 } 
