@@ -8,7 +8,7 @@ namespace TaskFlow.Models {
     public int ProjectId { get; set; }
 
     [Required]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     // Description optionelle (utilisez-la, c'est dans le code ˶˃ᵕ˂˶)
     public string? Description { get; set;}
@@ -21,7 +21,7 @@ namespace TaskFlow.Models {
     public int UserId { get; set; }
     public User User { get; set; } = null!;
 
-    // Liste de tâches
-    public ICollection<Task> Tasks { get; set; } = new List<Task>();
+    // Liste de tâches - même renommage pour éviter la confusion que Task.cs:17
+    public ICollection<UserTask> Tasks { get; set; } = new List<UserTask>();
   }
 }

@@ -14,11 +14,14 @@ namespace TaskFlow.Models {
     public int Id { get; set; }
 
     [Required]
+    public Role Role { get; set; } = Role.User;
+
+    [Required]
     public string Username { get; set;} = string.Empty;
 
     [Required]
     [EmailAddress]
-    public string EmailAddress { get ; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
 
     // Important : utiliser une fonction de hashage : RGPD les enfants !!!
     [Required]
