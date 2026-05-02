@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -33,7 +34,7 @@ namespace TaskFlow.Controllers {
       var projets = await _db.Projects
         .Where(p => p.UserId == userId)
         .Select(p => new ProjectResponseDto(
-          p.Id,
+          p.ProjetId,
           p.Name,
           p.Description,
           p.CreationDate,
@@ -49,17 +50,18 @@ namespace TaskFlow.Controllers {
     public async Task<IActionResult> GetProjectById(int id) {
       var userId = GetCurrentUserId();
       
-      if (id == null)
-	return BadRequest(new ApiError("400","ID de projet manquant :("))
+      if (id <= 0) // J'espère que ça marche bien ça, j'ai trouvé ça dans les tréfons de la doc TwT
+	return BadRequest(new ApiError("400","ID de projet manquant :("));
 
       if (userId == null)
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable <_<"));
+      Console.WriteLine($"USER ID: {userId}");
 
       // Encore une fois, requête EntityFramework au lieu de sortir le SQL
       var project = await _db.Projects
-        .Where(p => p.Id == id && p.UserId == userId)
+        .Where(p => p.ProjetId == id && p.UserId == userId)
         .Select(p => new ProjectResponseDto(
-          p.Id,
+          p.ProjetId,
           p.Name,
           p.Description,
           p.CreationDate,
@@ -95,13 +97,13 @@ namespace TaskFlow.Controllers {
       await _db.SaveChangesAsync();
 
       var response = new ProjectResponseDto(
-        project.Id,
+        project.ProjetId,
         project.Name,
         project.Description,
         project.CreationDate,
         project.UserId
       );
-      return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, response);
+      return CreatedAtAction(nameof(GetProjectById), new { id = project.ProjetId }, response);
     }
 
     // Modification d'un projet qui existe déjà
@@ -114,7 +116,7 @@ namespace TaskFlow.Controllers {
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable."));
 
       var project = await _db.Projects
-        .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+        .FirstOrDefaultAsync(p => p.ProjetId == id && p.UserId == userId);
 
       if (project == null)
         return NotFound(new ApiError("404", "Projet introuvable."));
@@ -132,7 +134,7 @@ namespace TaskFlow.Controllers {
       // Ça permet d'avoir un peu de retour, on pourrait hypothétiquement
       // faire un site avec React qui serait bien responsive & tout
       return Ok(new ProjectResponseDto(
-        project.Id,
+        project.ProjetId,
         project.Name,
         project.Description,
         project.CreationDate,
@@ -149,7 +151,7 @@ namespace TaskFlow.Controllers {
       if (userId == null)
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable."));
 
-      var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+      var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjetId == id && p.UserId == userId);
 
       if (project == null)
         return NotFound(new ApiError("404", "Projet introuvable ou suppression non autorisée."));
@@ -159,7 +161,7 @@ namespace TaskFlow.Controllers {
 
       // Projet bien supprimé -> ദ്ദിᵔᗜᵔ
       return Ok(new {
-        code = "202,
+        code = "202",
         message = "Projet supprimé avec succès."
       });
     }

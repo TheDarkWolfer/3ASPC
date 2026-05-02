@@ -5,7 +5,7 @@ namespace TaskFlow.Models {
 
   public class Project {
     [Key] // Clef primaire - /!\ différente de l'id de propriétaire /!\
-    public int ProjectId { get; set; }
+    public int ProjetId { get; set; }
 
     [Required]
     public string Name { get; set; } = string.Empty;
