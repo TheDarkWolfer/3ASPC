@@ -3,6 +3,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using TaskFlow3ASPC.Middlewares;
 using TaskFlow.Data;
 
 // Constructeur d'appli (ou API) web
@@ -67,6 +68,10 @@ app.UseSwaggerUI();
 
 // Middleware d'authentification, on utilisera des JWT
 app.UseAuthentication();
+
+// Middleware pour éviter que les gens cassent notre belle API ¬‸¬*
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 app.UseAuthorization();
 app.MapControllers();
 
