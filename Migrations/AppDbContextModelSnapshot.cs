@@ -19,7 +19,7 @@ namespace _3ASPC_Proj.Migrations
 
             modelBuilder.Entity("TaskFlow.Models.Project", b =>
                 {
-                    b.Property<int>("ProjectId")
+                    b.Property<int>("ProjetId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -36,7 +36,7 @@ namespace _3ASPC_Proj.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ProjectId");
+                    b.HasKey("ProjetId");
 
                     b.HasIndex("UserId");
 

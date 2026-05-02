@@ -11,7 +11,7 @@ using TaskFlow.Data;
 namespace _3ASPC_Proj.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260501141747_InitialCreate")]
+    [Migration("20260502154134_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -22,7 +22,7 @@ namespace _3ASPC_Proj.Migrations
 
             modelBuilder.Entity("TaskFlow.Models.Project", b =>
                 {
-                    b.Property<int>("ProjectId")
+                    b.Property<int>("ProjetId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -39,7 +39,7 @@ namespace _3ASPC_Proj.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ProjectId");
+                    b.HasKey("ProjetId");
 
                     b.HasIndex("UserId");
 

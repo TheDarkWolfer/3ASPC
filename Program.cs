@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,35 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Documentation Swagger/OpenAPI, comme dans le 3API
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Ajout du bouton "Authorization" sur Swagger, pour les tests sur les différents endpoints
+// Ça m'a pris une HEURE cette horreur, je vais partir élever des chèvres dans le Jura, par
+// la Lune !!!
+builder.Services.AddSwaggerGen(options => {
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Entre ton token JWT ici"
+    });
+
+    // On précise bien le type de token qu'on lui donne dans cette boite de dialogue
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        {
+            new OpenApiSecurityScheme {
+                Reference = new OpenApiReference {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+	    // De base, string vide vu qu'on peut pas recréer le token à chaque lancement
+            Array.Empty<string>()
+        }
+    });
+});
+
 
 // Auth JWT - ça permet de vérifier si une requête peut accéder à un endpoint
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
