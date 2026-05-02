@@ -61,6 +61,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+// Swagger me sauve la vie quand aux tests d'endpoints en vrai, c'est TELLEMENT utile つ╥﹏╥つ
 app.UseSwagger();
 app.UseSwaggerUI();
 

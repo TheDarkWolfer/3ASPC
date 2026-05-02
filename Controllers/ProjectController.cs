@@ -28,7 +28,8 @@ namespace TaskFlow.Controllers {
       if (userId == null)
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable."));
 
-      // On utilise la syntaxe d'EntityFramework au lieu de faire une requête SQL
+      // On utilise la syntaxe d'EntityFramework au lieu de faire 
+      // une requête SQL directement
       // Ça a l'avantage de rendre tout ça un peu plus résistant aux 
       // injections SQL ╮.❛ᴗ❛.╭
       var projets = await _db.Projects
