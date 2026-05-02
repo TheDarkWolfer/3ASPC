@@ -39,4 +39,11 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Message d'erreur si la requête finit sur un endpoint qu'existe pô
+app.MapFallback(() => Results.NotFound(new {
+  code = "404",
+  message = "Cette route n'existe pas *_*"
+}));
+
 app.Run();

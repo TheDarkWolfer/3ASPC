@@ -16,6 +16,8 @@ namespace TaskFlow.Controllers {
   public class UsersController : ControllerBase {
 
     // Connection à la DB et récupération de la configuration
+    // Privés, pour éviter que les différentes parties du code s'emmêlent 
+    // les pinceaux et commence à échanger des configs ou je ne sais quoi
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
 
@@ -24,7 +26,7 @@ namespace TaskFlow.Controllers {
       _config = config;
     }
 
-    // Création de nouvel utilisateur.ice
+    // Création de nouvel.le utilisateur.ice
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto) {
 
@@ -32,28 +34,35 @@ namespace TaskFlow.Controllers {
       if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
         return Conflict("Cet email est déjà utilisé.");
 
-      var user = new User {
+      var newUser = new User {
         Username = dto.Username,
         Email    = dto.Email,
         Password = BCrypt.Net.BCrypt.HashPassword(dto.Password), // C'est pas dans le cahier des charges, mais ![Article 5 paragraphe 1 alinéa F du RGPD](https://gdpr-info.eu/art-5-gdpr/)
         Role     = Role.User
       };
 
-      _db.Users.Add(user);
+      // Ajout d'un.e utilisateur.ice à la DB
+      _db.Users.Add(newUser);
       await _db.SaveChangesAsync();
 
-      return CreatedAtAction(null, null, new { user.Id, user.Username, user.Email, user.Role });
+      return CreatedAtAction(null, null, new { newUser.Id, newUser.Username, newUser.Email, newUser.Role });
     }
 
     // Page de logins - on récupère les données utilisateur.ice depuis la DB SQLite
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto) {
 
+      // NOTA BENE : Si le code retrouve pas d'utilisateur.ice dans la DB, il rend un
+      // `null` ; on va s'en servir plus loin
       var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
       // Utilisateur pas trouvé OU mauvais mot de passe
       if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
-        return Unauthorized("Email ou mot de passe incorrect !");
+	return Unauthorized(new ErrorResponse(
+	  "401",
+	  "Email ou mot de passe incorrect !"
+	));
+
 
 
       // Si tout se passe bien, cooki- token JWT, pardon •𐃷•
@@ -98,4 +107,5 @@ namespace TaskFlow.Controllers {
   // d'User classique
   public record RegisterDto(string Username, string Email, string Password);
   public record LoginDto(string Email, string Password);
+  public record ErrorResponse(string Code, string Message);
 }
