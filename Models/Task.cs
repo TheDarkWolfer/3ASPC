@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 // Création d'un modèle de données
@@ -29,10 +32,18 @@ namespace TaskFlow.Models {
     // Clef étrangère (externe ?) pour l'ID de projet lié
     [Required]
     public int ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
 
-    // Description de la tâche
-    public ICollection<UserTask> Tasks { get; set; } = new List<UserTask>(); 
+    // Description de la tâche. C'est bien censé être une liste de strings, pas de tâche ¬‸¬
+    [JsonIgnore]
+    public string DescriptionRaw { get; set; } = "[]";
+
+    [NotMapped]
+    public ICollection<string> Description {
+      get => string.IsNullOrEmpty(DescriptionRaw) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(DescriptionRaw) ?? new List<string>(); 
+      set => DescriptionRaw = JsonSerializer.Serialize(value);
+    }
+
+
 
   }
 } 
