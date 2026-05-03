@@ -23,19 +23,16 @@ namespace TaskFlow.Controllers {
       return int.TryParse(claim, out var id) ? id : null;
     }
 
-    // Vérifie que le projet appartient bien à l'user
-    private async Task<bool> UserOwnsProject(int projectId, int userId) {
-      return await _db.Projects.AnyAsync(p => p.ProjetId == projectId && p.UserId == userId);
-    }
-
-    // GET /api/tasks/{projectId} qui affiche toutes les tâches d'un projet
+    // GET /api/tasks/{projectId} — toutes les tâches d'un projet
     [HttpGet("{projectId}")]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTasks(int projectId) {
       var userId = GetCurrentUserId();
-      if (userId == null) return Unauthorized();
+      if (userId == null) return StatusCode(401, new ApiError("401","Il vous faut un token, quand même >_>"));
 
-      if (!await UserOwnsProject(projectId, userId.Value))
-        return Forbid();
+      if (!await _db.Projects.AnyAsync(p => p.ProjetId == projectId && p.UserId == userId))
+        return StatusCode(404, new ApiError("404","Tâche non trouvée ou non accessible"));
 
       var tasks = await _db.Tasks
         .Where(t => t.ProjectId == projectId)
@@ -43,16 +40,17 @@ namespace TaskFlow.Controllers {
       return Ok(tasks);
     }
 
-    // POST /api/tasks va créer une nouvelle tâche
-    // (please utilisez la description, elle a été difficile à implémenter >﹏<)
+    // POST /api/tasks — créer une tâche
     [HttpPost]
+    [ProducesResponseType(typeof(void),StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto) {
       var userId = GetCurrentUserId();
-      if (userId == null) return Unauthorized();
+      if (userId == null) return StatusCode(403, new ApiError("403","Désolée, mais il vous faut un token valide pour faire ça ^ᴗ^ᵕ"));
 
-      // On vérifie que le projet cible appartient bien à l'user
-      if (!await UserOwnsProject(dto.ProjectId, userId.Value))
-        return Forbid();
+      if (!await _db.Projects.AnyAsync(p => p.ProjetId == dto.ProjectId && p.UserId == userId))
+        return StatusCode(404, new ApiError("404","Projet absent ou non accessible"));
 
       var task = new UserTask {
         Title         = dto.Title,
@@ -70,15 +68,21 @@ namespace TaskFlow.Controllers {
 
     // PUT /api/tasks/{taskId} — modifie une tâche
     [HttpPut("{taskId}")]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateTask(int taskId, [FromBody] UpdateTaskDto dto) {
       var userId = GetCurrentUserId();
-      if (userId == null) return Unauthorized();
+      if (userId == null) return StatusCode(401, new ApiError("401","Désolée, mais vous n'avez pas le droit de faire ça :("));
 
-      // On join avec Project pour vérifier l'ownership en une requête
       var task = await _db.Tasks.FirstOrDefaultAsync(t => t.TaskId == taskId);
-      if (task == null) return NotFound();
-      if (!await UserOwnsProject(task.ProjectId, userId.Value)) return Forbid();
+      if (task == null) return StatusCode(404, new ApiError("404","Désolée, mais il manque quelque chose ici..."));
 
+      // On vérifie que la personne a bien le droit de toucher au projet
+      if (!await _db.Projects.AnyAsync(p => p.ProjetId == task.ProjectId && p.UserId == userId))
+        return StatusCode(404, new ApiError("404","Il manque quelque chose dans l'équation ¬_¬*"));
+
+      // On évite de remplacer des champs qui existent déjà dans la DB
       if (dto.Title != null)         task.Title = dto.Title;
       if (dto.Description != null)   task.Description = dto.Description;
       if (dto.DueDate != null)       task.DueDate = dto.DueDate.Value;
@@ -88,20 +92,25 @@ namespace TaskFlow.Controllers {
       return Ok(task);
     }
 
-    
     // DELETE /api/tasks/{taskId} — YEET (╯°□°）╯︵ ┻━┻
     [HttpDelete("{taskId}")]
+    [ProducesResponseType(typeof(void),StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTask(int taskId) {
       var userId = GetCurrentUserId();
-      if (userId == null) return Unauthorized();
+      if (userId == null) return StatusCode(401, new ApiError("401","Vous n'avez pas le droit de faire ça ¬‸¬*"));
 
       var task = await _db.Tasks.FirstOrDefaultAsync(t => t.TaskId == taskId);
-      if (task == null) return NotFound();
-      if (!await UserOwnsProject(task.ProjectId, userId.Value)) return Forbid();
+      if (task == null) return StatusCode(404, new ApiError("404","Cette tâche n'existe pas, impossible de la supprimer !"));
 
+      if (!await _db.Projects.AnyAsync(p => p.ProjetId == task.ProjectId && p.UserId == userId))
+        return StatusCode(404, new ApiError("404","Il manque un truc ici..."));
+
+      // El famosó YEET
       _db.Tasks.Remove(task);
       await _db.SaveChangesAsync();
-      return NoContent();
+      return NoContent(); // 204 quand la tâche a bien été supprimée
     }
   }
 

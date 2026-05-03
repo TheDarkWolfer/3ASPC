@@ -7,11 +7,13 @@ using System.Security.Claims;
 using System.Text;
 using TaskFlow.Data;
 using TaskFlow.Models;
+using Microsoft.AspNetCore.Authorization;
 
 // Controlleur pour les utilisateur.ices
 namespace TaskFlow.Controllers {
 
   [ApiController]
+  [AllowAnonymous] // Ça indique que cet endpoint peut être utilisé sans login
   [Route("api/users")]
   public class UsersController : ControllerBase {
 
@@ -28,17 +30,25 @@ namespace TaskFlow.Controllers {
 
     // Création de nouvel.le utilisateur.ice
     [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(void),StatusCodes.Status201Created)] // Utilisateur.ice créé
+    [ProducesResponseType(typeof(void),StatusCodes.Status400BadRequest)] // Mauvaises données dans la requête
+    [ProducesResponseType(typeof(void),StatusCodes.Status409Conflict)] // Si l'email est déjà utilisé
     public async Task<IActionResult> Register([FromBody] RegisterDto dto) {
+
+      // Si on a à faire à.u premièr.e utilisateur.ice, ça nous permettra
+      // de le savoir et d'en faire un.e admin
+      var isFirstUser = !await _db.Users.AnyAsync();
 
       // Check pour vérifier qu'on a bien un mail unique
       if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
-        return Conflict("Cet email est déjà utilisé.");
+        return StatusCode(409, new ApiError("409","Cet email est déjà utilisé, désolée -﹏-"));
 
       var newUser = new User {
         Username = dto.Username,
         Email    = dto.Email,
         Password = BCrypt.Net.BCrypt.HashPassword(dto.Password), // C'est pas dans le cahier des charges, mais ![Article 5 paragraphe 1 alinéa F du RGPD](https://gdpr-info.eu/art-5-gdpr/)
-        Role     = Role.User
+        Role = isFirstUser ? Role.Admin : Role.User
       };
 
       // Ajout d'un.e utilisateur.ice à la DB
@@ -50,6 +60,9 @@ namespace TaskFlow.Controllers {
 
     // Page de logins - on récupère les données utilisateur.ice depuis la DB SQLite
     [HttpPost("login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)] // Bon login ദ്ദിᵔᗜᵔ
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)] // Mauvais login 
     public async Task<IActionResult> Login([FromBody] LoginDto dto) {
 
       // NOTA BENE : Si le code retrouve pas d'utilisateur.ice dans la DB, il rend un
@@ -58,12 +71,10 @@ namespace TaskFlow.Controllers {
 
       // Utilisateur pas trouvé OU mauvais mot de passe
       if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
-	return Unauthorized(new ErrorResponse(
+	return StatusCode(401, new ApiError(
 	  "401",
 	  "Email ou mot de passe incorrect !"
 	));
-
-
 
       // Si tout se passe bien, cooki- token JWT, pardon •𐃷•
       var token = GenerateJwtToken(user);
@@ -107,5 +118,4 @@ namespace TaskFlow.Controllers {
   // d'User classique
   public record RegisterDto(string Username, string Email, string Password);
   public record LoginDto(string Email, string Password);
-  public record ErrorResponse(string Code, string Message);
 }
