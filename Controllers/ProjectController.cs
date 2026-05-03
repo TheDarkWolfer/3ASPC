@@ -166,9 +166,9 @@ namespace TaskFlow.Controllers {
     // 
     // DELETE /api/projets/{id}
     [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(void),StatusCode202Accepted)] // "Accepted" pour la suppression ╮.❛ᴗ❛.╭
-    [ProducesResponseType(typeof(void),StatusCode403Forbidden)] 
-    [ProducesResponseType(typeof(void),StatusCode404NotFound)]
+    [ProducesResponseType(typeof(void),StatusCodes.Status202Accepted)] // "Accepted" pour la suppression ╮.❛ᴗ❛.╭
+    [ProducesResponseType(typeof(void),StatusCodes.Status403Forbidden)] 
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProject(int id) {
       var userId = GetCurrentUserId();
 
