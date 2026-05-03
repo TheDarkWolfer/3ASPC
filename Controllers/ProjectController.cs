@@ -22,11 +22,13 @@ namespace TaskFlow.Controllers {
     // Récupération des différents projets auxquels l'utilisateur.ice a accès'
     // GET /api/projets
     [HttpGet]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)] // Pour les utilisateur.ices autentifiés
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)] // Pour le reste >:(
     public async Task<IActionResult> GetProjects() {
       var userId = GetCurrentUserId();
 
       if (userId == null)
-        return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable."));
+        return Unauthorized(new ApiError("401", "Token invalide ou utilisateur introuvable."));
 
       // On utilise la syntaxe d'EntityFramework au lieu de faire 
       // une requête SQL directement
@@ -48,11 +50,15 @@ namespace TaskFlow.Controllers {
 
     // GET /api/projets/{id}
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)] // 200 quand tout se passe bien
+    [ProducesResponseType(typeof(void),StatusCodes.Status400BadRequest)] // 400 quand on reçoit des mauvaises data
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)] // 404 quand projet non existant 
     public async Task<IActionResult> GetProjectById(int id) {
       var userId = GetCurrentUserId();
       
       if (id <= 0) // J'espère que ça marche bien ça, j'ai trouvé ça dans les tréfons de la doc TwT
-	return BadRequest(new ApiError("400","ID de projet manquant :("));
+	return BadRequest(new ApiError("400","Requête malformée :("));
 
       if (userId == null)
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable <_<"));
@@ -78,6 +84,9 @@ namespace TaskFlow.Controllers {
     // Création d'un nouveau projet (faut un token valide btw)
     // POST /api/projets
     [HttpPost]
+    [ProducesResponseType(typeof(void),StatusCodes.Status201Created)] // Projet créé
+    [ProducesResponseType(typeof(void),StatusCodes.Status400BadRequest)] // Si on reçoit un body mal fait par l'utilisateur.ice
+    [ProducesResponseType(typeof(void),StatusCodes.Status401Unauthorized)] // Pas de token -> La PORTE !
     public async Task<IActionResult> CreateProject([FromBody] CreateProjectDto dto) {
       var userId = GetCurrentUserId();
 
@@ -110,6 +119,9 @@ namespace TaskFlow.Controllers {
     // Modification d'un projet qui existe déjà
     // PUT /api/projets/{id}
     [HttpPut("{id}")]
+    [ProducesResponseType(typeof(void),StatusCodes.Status200OK)] // PUT qui a marché
+    [ProducesResponseType(typeof(void),StatusCodes.Status400BadRequest)] // Requête malformée
+    [ProducesResponseType(typeof(void),StatusCodes.Status403Forbidden)] // Utilisateur.ice qui veut changer quelque chose sur le projet de quelqu'un d'autre
     public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectDto dto) {
       var userId = GetCurrentUserId();
 
@@ -176,27 +188,8 @@ namespace TaskFlow.Controllers {
   }
 
   // DTOs pour les différentes actions du CRUD
-  //
-  public record CreateProjectDto(
-    string Name,
-    string? Description
-  );
-
-  public record UpdateProjectDto(
-    string Name,
-    string? Description
-  );
-
-  public record ProjectResponseDto(
-    int Id,
-    string Name,
-    string? Description,
-    DateTime CreationDate,
-    int UserId
-  );
-
-  public record ApiError(
-    string Code,
-    string Message
-  );
+  public record CreateProjectDto(string Name,string? Description);
+  public record UpdateProjectDto(string Name,string? Description);
+  public record ProjectResponseDto(int Id,string Name,string? Description,DateTime CreationDate,int UserId);
+  public record ApiError(string Code,string Message);
 }
