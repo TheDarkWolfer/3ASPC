@@ -122,14 +122,22 @@ namespace TaskFlow.Controllers {
     [ProducesResponseType(typeof(void),StatusCodes.Status200OK)] // PUT qui a marché
     [ProducesResponseType(typeof(void),StatusCodes.Status400BadRequest)] // Requête malformée
     [ProducesResponseType(typeof(void),StatusCodes.Status403Forbidden)] // Utilisateur.ice qui veut changer quelque chose sur le projet de quelqu'un d'autre
+    [ProducesResponseType(typeof(void),StatusCodes.Status404NotFound)] // El classico 404
     public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectDto dto) {
       var userId = GetCurrentUserId();
 
       if (userId == null)
         return Unauthorized(new ApiError("403", "Token invalide ou utilisateur introuvable."));
 
-      var project = await _db.Projects
-        .FirstOrDefaultAsync(p => p.ProjetId == id && p.UserId == userId);
+      var project = await _db.Projects.FirstOrDefaultAsync(p => p.ProjetId == id && p.UserId == userId);
+      /*                                                                ▲                  ▲
+       *                                                                │                  │
+       * J'en profite pour expliquer un p'tit truc                Là c'est juste choper    │
+       * sur cette requête EF                                     le bon projet            │
+       *                                                                                   │
+       *                                                            On s'assure que le projet a bien comme
+       *                                                            propriétaire l'utilisateur.ice concerné.e
+       */
 
       if (project == null)
         return NotFound(new ApiError("404", "Projet introuvable."));
@@ -158,6 +166,9 @@ namespace TaskFlow.Controllers {
     // 
     // DELETE /api/projets/{id}
     [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(void),StatusCode202Accepted)] // "Accepted" pour la suppression ╮.❛ᴗ❛.╭
+    [ProducesResponseType(typeof(void),StatusCode403Forbidden)] 
+    [ProducesResponseType(typeof(void),StatusCode404NotFound)]
     public async Task<IActionResult> DeleteProject(int id) {
       var userId = GetCurrentUserId();
 
